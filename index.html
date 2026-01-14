@@ -1,0 +1,346 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>구구단 퀴즈 게임</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600&family=Nanum+Gothic:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: radial-gradient(120% 120% at 20% 20%, #1f2f98, #0b1028 60%);
+      --card: #0f1738;
+      --accent: #8ef4c1;
+      --accent-2: #7db1ff;
+      --text: #eef2ff;
+      --muted: #9fb2d6;
+      --error: #ff7088;
+      --correct: #8df5b3;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', 'Nanum Gothic', system-ui, -apple-system, sans-serif;
+      word-break: keep-all;
+      line-height: 1.6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+    .app {
+      width: min(960px, 100%);
+      background: linear-gradient(145deg, rgba(255,255,255,0.04), rgba(0,0,0,0.05));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      box-shadow: 0 20px 80px rgba(0,0,0,0.4);
+      padding: 28px;
+      backdrop-filter: blur(6px);
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: baseline;
+      margin-bottom: 18px;
+    }
+    h1 {
+      font-size: 28px;
+      margin: 0;
+      letter-spacing: 0.4px;
+    }
+    .pill {
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.07);
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    input, select, button {
+      font-family: inherit;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s ease, transform 0.1s ease;
+    }
+    input:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(142, 244, 193, 0.18);
+    }
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #0b0f1f;
+      border: none;
+    }
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid rgba(255,255,255,0.07);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .question {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .question h2 { margin: 0; font-size: 32px; letter-spacing: 0.6px; }
+    .input-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .feedback { margin-top: 12px; font-weight: 600; }
+    .feedback.correct { color: var(--correct); }
+    .feedback.wrong { color: var(--error); }
+    .progress {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .bar {
+      position: relative;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+    }
+    .bar span {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      border-radius: inherit;
+      transition: width 0.25s ease;
+    }
+    .history {
+      margin-top: 18px;
+      display: grid;
+      gap: 8px;
+    }
+    .history-item {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .history-item strong, .history-item .muted { word-break: break-word; }
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      color: #0b0f1f;
+    }
+    .badge.good { background: var(--accent); }
+    .badge.bad { background: var(--error); color: #fff; }
+    .muted { color: var(--muted); }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    @media (max-width: 640px) {
+      h1 { font-size: 24px; }
+      .question h2 { font-size: 28px; }
+      .history-item { grid-template-columns: 1fr; }
+      .app { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script type="text/babel">
+    const randomQuestion = (minDan, maxDan) => {
+      const dan = Math.floor(Math.random() * (maxDan - minDan + 1)) + minDan;
+      const num = Math.floor(Math.random() * 9) + 1;
+      return { dan, num, answer: dan * num };
+    };
+
+    function App() {
+      const [rounds, setRounds] = React.useState(8);
+      const [minDan, setMinDan] = React.useState(2);
+      const [maxDan, setMaxDan] = React.useState(9);
+      const [question, setQuestion] = React.useState(() => randomQuestion(2, 9));
+      const [step, setStep] = React.useState(1);
+      const [input, setInput] = React.useState('');
+      const [score, setScore] = React.useState(0);
+      const [history, setHistory] = React.useState([]);
+      const [feedback, setFeedback] = React.useState('');
+      const [finished, setFinished] = React.useState(false);
+
+      const submitAnswer = () => {
+        const trimmed = input.trim();
+        if (!trimmed) {
+          setFeedback('숫자를 입력해 주세요.');
+          return;
+        }
+        const guess = Number(trimmed);
+        if (Number.isNaN(guess)) {
+          setFeedback('숫자만 입력 가능합니다.');
+          return;
+        }
+        const isCorrect = guess === question.answer;
+        setScore((prev) => prev + (isCorrect ? 1 : 0));
+        setHistory((prev) => [
+          { id: prev.length + 1, ...question, guess, correct: isCorrect },
+          ...prev,
+        ]);
+        setFeedback(isCorrect ? '정답!' : `오답! 정답은 ${question.answer}`);
+
+        if (step >= rounds) {
+          setFinished(true);
+        } else {
+          setStep((prev) => prev + 1);
+          setQuestion(randomQuestion(minDan, maxDan));
+        }
+        setInput('');
+      };
+
+      const nextIfFinished = () => {
+        setStep(1);
+        setHistory([]);
+        setScore(0);
+        setFeedback('');
+        setFinished(false);
+        setQuestion(randomQuestion(minDan, maxDan));
+        setInput('');
+      };
+
+      const progress = Math.min(1, (step - (finished ? 0 : 1)) / rounds);
+
+      const handleKey = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (finished) nextIfFinished(); else submitAnswer();
+        }
+      };
+
+      return (
+        <div className="app">
+          <header>
+            <h1>구구단 퀴즈</h1>
+            <span className="pill">HTML · CSS · React</span>
+          </header>
+
+          <div className="controls card">
+            <label>
+              문제 개수
+              <input
+                type="number"
+                min="1"
+                max="99"
+                value={rounds}
+                onChange={(e) => setRounds(Math.max(1, Number(e.target.value) || 1))}
+              />
+            </label>
+            <label>
+              단 범위 (최소)
+              <input
+                type="number"
+                min="1"
+                max={maxDan}
+                value={minDan}
+                onChange={(e) => setMinDan(Math.min(Math.max(1, Number(e.target.value) || 1), maxDan))}
+              />
+            </label>
+            <label>
+              단 범위 (최대)
+              <input
+                type="number"
+                min={minDan}
+                max="20"
+                value={maxDan}
+                onChange={(e) => setMaxDan(Math.max(minDan, Number(e.target.value) || minDan))}
+              />
+            </label>
+            <div className="row" style={{ justifyContent: 'flex-start', alignSelf: 'end' }}>
+              <button onClick={nextIfFinished}>새 게임 시작</button>
+            </div>
+          </div>
+
+          <div className="card" style={{ marginTop: 16 }}>
+            <div className="question">
+              <h2>{finished ? '게임 종료!' : `${question.dan} × ${question.num} = ?`}</h2>
+              <div className="row">
+                <div className="pill">점수 {score} / {rounds}</div>
+                <div className="pill">문제 {Math.min(step, rounds)} / {rounds}</div>
+              </div>
+            </div>
+
+            <div className="input-row" style={{ marginTop: 16 }}>
+              <input
+                type="number"
+                placeholder={finished ? '다시 시작하려면 엔터 또는 버튼' : '정답 입력'}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKey}
+                disabled={finished}
+              />
+              <button onClick={finished ? nextIfFinished : submitAnswer}>
+                {finished ? '다시 시작' : '확인'}
+              </button>
+            </div>
+            {feedback && (
+              <div className={`feedback ${feedback.startsWith('정답') ? 'correct' : feedback.startsWith('오답') ? 'wrong' : ''}`}>
+                {feedback}
+              </div>
+            )}
+
+            <div className="progress">
+              <div className="bar"><span style={{ width: `${progress * 100}%` }}></span></div>
+              <span>{Math.round(progress * 100)}% 진행</span>
+            </div>
+          </div>
+
+          <div className="history">
+            {history.length === 0 && <p className="muted">아직 기록이 없습니다. 문제를 풀어보세요!</p>}
+            {history.map((item) => (
+              <div key={item.id} className="history-item">
+                <strong>{item.dan} × {item.num} = {item.answer}</strong>
+                <span className="muted">내 답: {item.guess}</span>
+                <span className={`badge ${item.correct ? 'good' : 'bad'}`}>
+                  {item.correct ? '정답' : '오답'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
